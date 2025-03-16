@@ -6,7 +6,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 
 import google.generativeai as genai
-genai.configure(api_key="AIzaSyCuNiwxnuYsiKmlOVH30YnyI_RBiJUd-Qc") 
+genai.configure(api_key="AIzaSyCuNiwxnuYsiKmlOVH30YnyI_RBiJUd-Qc")
 
 
 memory = ConversationBufferMemory(k=5)
