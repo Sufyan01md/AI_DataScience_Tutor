@@ -1,32 +1,55 @@
-
 import streamlit as st
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationChain
-from langchain_google_genai import ChatGoogleGenerativeAI
-
-
 import google.generativeai as genai
-genai.configure(api_key="AIzaSyCuNiwxnuYsiKmlOVH30YnyI_RBiJUd-Qc")
+from langchain.memory import ConversationBufferMemory
 
+# Configure Google Gemini API
+genai.configure(api_key="AIzaSyB92k02wczwkOK3VWuLQZ5JyJWj-uAV6Tk")
 
-memory = ConversationBufferMemory(k=5)
+# Initialize memory
+if 'memory' not in st.session_state:
+    st.session_state.memory = ConversationBufferMemory()
 
-
-model = ChatGoogleGenerativeAI(model="gemini-1.5-pro", temperature=0.3)
-
-
-chain = ConversationChain(llm=model, memory=memory)
-
+def ask_tutor(query):
+    """Send the user's data science-related query to Google Gemini AI with conversation memory."""
+    model = genai.GenerativeModel("gemini-1.5-pro-latest")
+    
+    conversation_history = st.session_state.memory.load_memory_variables({})['history']
+    prompt = f"""
+    You are an AI Data Science Tutor. Your task is to help the user with their data science queries.
+    Only answer questions related to data science, including statistics, machine learning, deep learning, and data analysis.
+    If a question is not related to data science, politely refuse to answer.
+    Maintain context from previous exchanges to provide coherent and context-aware responses.
+    
+    Conversation History:
+    {conversation_history}
+    
+    User's Question:
+    {query}
+    """
+    response = model.generate_content(prompt)
+    reply_text = response.text if hasattr(response, "text") else str(response)
+    
+    # Update memory
+    st.session_state.memory.save_context({'query': query}, {'response': reply_text})
+    
+    return reply_text
 
 st.title("Conversational AI Data Science Tutor")
-st.write("Ask any data science-related questions!")
+st.write("Ask your data science doubts and get AI-powered explanations with memory-enabled conversation.")
 
-user_input = st.text_input("Your Question:")
-if st.button("Ask"):
-    if user_input.strip():
+query_input = st.text_area("Enter your data science question:", height=200)
+
+if st.button("Ask Tutor"):
+    if query_input.strip():
         with st.spinner("Thinking..."):
-            response = chain.run(user_input)
-        st.subheader("Tutor's Response:")
-        st.write(response)
+            tutor_response = ask_tutor(query_input)
+        
+        st.subheader("Tutor's Response")
+        st.write(tutor_response)
     else:
-        st.warning("Please enter a question!")
+        st.warning("Please enter a data science-related question!")
+
+# Option to clear conversation memory
+if st.button("Clear Conversation Memory"):
+    st.session_state.memory.clear()
+    st.success("Memory cleared!")
